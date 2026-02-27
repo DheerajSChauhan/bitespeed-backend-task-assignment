@@ -1,33 +1,28 @@
 # Bitespeed Identity Reconciliation
 
-A web service that identifies and consolidates customer contact information across multiple purchases.
+A web service that identifies and consolidates customer contact information across multiple purchases — built for the Bitespeed Backend Task.
 
-## Live Endpoint
-> Update this after deploying: `https://your-app.onrender.com/identify`
+## 🌐 Live Endpoint
+
+```
+https://bitespeed-backend-task-assignment.onrender.com/identify
+```
 
 ---
 
-## Setup & Run Locally
-
-### 1. Install dependencies
-```bash
-npm install
-```
-
-### 2. Start the server
-```bash
-npm start
-```
-
-The server runs on **http://localhost:3000**
-
----
-
-## API
+## 📬 API Reference
 
 ### `POST /identify`
 
-**Request body** (at least one field required):
+Identifies and reconciles a customer's contact information.
+
+**URL:** `https://bitespeed-backend-task-assignment.onrender.com/identify`  
+**Method:** `POST`  
+**Content-Type:** `application/json`
+
+#### Request Body
+At least one field is required.
+
 ```json
 {
   "email": "user@example.com",
@@ -35,7 +30,8 @@ The server runs on **http://localhost:3000**
 }
 ```
 
-**Response:**
+#### Response
+
 ```json
 {
   "contact": {
@@ -49,36 +45,109 @@ The server runs on **http://localhost:3000**
 
 ---
 
-## How It Works
+## 🧪 Example Requests
 
-1. **No match** → Creates a new `primary` contact
-2. **Match with no new info** → Returns the consolidated contact group
-3. **Match with new email/phone** → Creates a new `secondary` contact linked to the primary
-4. **Two separate primaries linked** → Older one stays primary, newer one becomes secondary
+### 1. New customer
+```json
+{
+  "email": "lorraine@hillvalley.edu",
+  "phoneNumber": "123456"
+}
+```
+**Response:**
+```json
+{
+  "contact": {
+    "primaryContatctId": 1,
+    "emails": ["lorraine@hillvalley.edu"],
+    "phoneNumbers": ["123456"],
+    "secondaryContactIds": []
+  }
+}
+```
 
 ---
 
-## Deploy to Render (Free)
-
-1. Push this project to a GitHub repository
-2. Go to [render.com](https://render.com) and create a free account
-3. Click **New → Web Service** and connect your GitHub repo
-4. Set the following:
-   - **Build Command:** `npm install`
-   - **Start Command:** `node index.js`
-   - **Environment:** Node
-5. Click **Deploy**
-6. Copy the live URL and update the README above
+### 2. Same phone, new email → creates secondary
+```json
+{
+  "email": "mcfly@hillvalley.edu",
+  "phoneNumber": "123456"
+}
+```
+**Response:**
+```json
+{
+  "contact": {
+    "primaryContatctId": 1,
+    "emails": ["lorraine@hillvalley.edu", "mcfly@hillvalley.edu"],
+    "phoneNumbers": ["123456"],
+    "secondaryContactIds": [2]
+  }
+}
+```
 
 ---
 
-## Project Structure
+### 3. Two primaries get merged
+Send these in order:
+```json
+{ "email": "george@hillvalley.edu", "phoneNumber": "919191" }
+{ "email": "biffsucks@hillvalley.edu", "phoneNumber": "717171" }
+{ "email": "george@hillvalley.edu", "phoneNumber": "717171" }
+```
+The third request links the two separate contacts — older one stays primary, newer becomes secondary.
+
+---
+
+## ⚙️ How It Works
+
+| Scenario | Behaviour |
+|---|---|
+| No match found | Creates a new `primary` contact |
+| Match found, no new info | Returns the consolidated contact group |
+| Match found, new email/phone | Creates a new `secondary` contact |
+| Two separate primaries linked | Older stays primary, newer becomes secondary |
+
+---
+
+## 🗄️ Database Schema
 
 ```
-├── index.js      # Express server & route
-├── db.js         # SQLite setup & schema
-├── identify.js   # Core reconciliation logic
-├── package.json
-└── README.md
+Contact {
+  id               Int
+  phoneNumber      String?
+  email            String?
+  linkedId         Int?         // ID of the primary contact
+  linkPrecedence   String       // "primary" or "secondary"
+  createdAt        DateTime
+  updatedAt        DateTime
+  deletedAt        DateTime?
+}
 ```
-# bitespeed-backend-task-assignment
+
+---
+
+## 🛠️ Tech Stack
+
+- **Runtime:** Node.js
+- **Framework:** Express.js
+- **Database:** SQLite (via better-sqlite3)
+- **Hosting:** Render.com
+
+---
+
+## 🚀 Run Locally
+
+```bash
+# Clone the repo
+git clone https://github.com/YOUR_USERNAME/bitespeed.git
+cd bitespeed
+
+# Install dependencies
+npm install
+
+# Start the server
+npm start
+# → Server running on http://localhost:3000
+```
